@@ -1,0 +1,49 @@
+import requests
+import csv
+import json
+import os
+
+# API request
+url = "https://api.feedly.com/v3/alerts"
+headers = {'Authorization': 'Bearer XXXXXX'}
+response = requests.get(url, headers=headers)
+data = response.json()
+
+# Set the directory and filename
+directory = 'PATH NAME'  # Replace with your directory path
+filename = 'enterprise_alerts.csv'
+full_path = os.path.join(directory, filename)
+
+# Check if the directory exists, create it if it doesn't
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+# Define the CSV header
+headers = ['id', 'label', 'createdBy', 'created', 'velocity', 'hasNewsletter', 'source_item_type', 'source_item_id', 'layer_type', 'part_ids', 'part_labels', 'layer_salience']
+
+# Create and write to the CSV file
+with open(full_path, mode='w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    writer.writerow(headers)
+
+    for alert in data['enterpriseAlerts']:
+        for item in alert['source']['items']:
+            for layer in alert['layers']:
+                part_ids = '; '.join([part['id'] for part in layer['parts'] if 'id' in part])
+                part_labels = '; '.join([part['label'] for part in layer['parts'] if 'label' in part])
+                writer.writerow([
+                    alert.get('id', ''),
+                    alert.get('label', ''),
+                    alert.get('createdBy', ''),
+                    alert.get('created', ''),
+                    alert.get('velocity', ''),
+                    alert.get('hasNewsletter', ''),
+                    item.get('type', ''),
+                    item.get('id', ''),
+                    layer.get('type', ''),
+                    part_ids,
+                    part_labels,
+                    layer.get('salience', ''),
+                ])
+
+print(f"CSV file '{full_path}' has been created.")
